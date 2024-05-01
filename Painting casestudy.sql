@@ -63,7 +63,7 @@ where city like '%0%';
 
 select *
 from museum_hours$
-where day not in ('Sunday','Monday','Tuesday','Wenesday','Thursday','Friday','Saturday')
+where day not in ('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')
 Update  museum_hours$ set day = 'Thursday'
 where day = 'Thusday';
 --9. Fetch the top 10 most famous painting subject
@@ -83,7 +83,7 @@ mh2.day= 'monday';
 --11. How many museums are open every single day?
 select  museum_id, count(distinct day) as open_day_count
 from museum_hours$
-where day in ('Sunday','Monday','Tuesday','Wenesday','Thursday','Friday','Saturday')
+where day in ('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')
 group by museum_id
 having count(distinct day) = 7;
 
@@ -111,16 +111,12 @@ group by cs.label
 order by Number_of_paintings asc;
 --15. Which museum is open for the longest during a day. Dispay museum name, state
 --and hours open and which day?
-select top 1 m.name, m.state, h.day, h.[open], h.[close], datediff(minute, h.[open],h.[close]) As duration
+select top 1 m.name, m.state, h.day, h.[open], h.[close], datediff(minute,try_convert(time,h.[open]),try_convert(time,h.[close])) As duration
 from museum$ m
 join museum_hours$ h
 on m.museum_id = h.museum_id
 where h.[open] is not null and h.[close] is not null
 order by duration desc;
-
-select *
-from museum_hours$
-where isdate([close]) like ;
 
 --16. Which museum has the most no of most popular painting style?
 select top 1 m.name as museum_name,w.style,count( w.work_id) as painting_style
@@ -132,37 +128,35 @@ order by painting_style desc;
 
 
 --17. Identify the artists whose paintings are displayed in multiple countries
-select top 9 a.full_name,count(w.artist_id) as paintings_displayed
+select top 9 a.full_name,count(w.work_id) as paintings_displayed
 from work$ w
 join artist$ a on a.artist_id = w.artist_id
---join museum$ m on a.artist_id = w.museum_id
+--join museum$ m on m.museum_id = w.museum_id
 group by a.full_name
 order by paintings_displayed desc;
-
---SQL Case Study - Paintings 2
 
 --18. Display the country and the city with most no of museums. Output 2 seperate
 --columns to mention the city and country. If there are multiple value, seperate them
 --with comma.
-select top 5 country,city ,count(museum_id) as number_of_museums
+select top 1 country,city ,count(museum_id) as number_of_museums
 from museum$
 group by country, city
---having count (museum_id) = 7
 order by number_of_museums desc;
 
 --19. Identify the artist and the museum where the most expensive and least expensive
 --painting is placed. Display the artist name, sale_price, painting name, museum
 --name, museum city and canvas label
-select top 1 canvas_size as cs.label, a.full_name,ps.sale_price,m.name,m.city
+select top 1 cs.label, a.full_name,w.name,ps.sale_price,m.name as museum_name,m.city
 from artist$ a
-join museum$ m on a.artist_id = m.museum_id
-join product_size$ ps on ps.size_id = a.artist_id
-join canvas_size$ cs on cs.size_id = a.artist_id
-where regular_price > sale_price
+Join work$ w on a.artist_id = w.artist_id
+join museum$ m on w.museum_id = m.museum_id
+join product_size$ ps on ps.size_id = w.work_id
+Left join canvas_size$ cs on cs.size_id = ps.size_id
+where ps.regular_price > ps.sale_price
+Order by ps.sale_price desc;
 
 
 --20. Which country has the 5th highest no of paintings?
-
 
 select Top 1 country
 from (select m.country, count(w.work_id) As number_of_paintings, row_number() over (order by count(w.work_id) desc) As ranking
